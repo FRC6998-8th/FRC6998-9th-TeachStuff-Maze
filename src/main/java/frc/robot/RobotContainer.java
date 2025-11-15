@@ -9,7 +9,6 @@ import frc.robot.commands.ExampleCommand;
 import frc.robot.subsystems.MazeSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -36,13 +35,7 @@ public class RobotContainer {
 
   private void configureBindings() {
     m_MazeSubsystem.setDefaultCommand(m_ExampleCommand);
-    m_driverController.b().whileTrue(m_MazeSubsystem.ResetDriveGyro());
     m_driverController.a().onTrue(m_MazeSubsystem.ResetMaze());
-    
-    m_driverController.povDown().whileTrue(m_MazeSubsystem.SysIdDynamic(Direction.kReverse));
-    m_driverController.povUp().whileTrue(m_MazeSubsystem.SysIdDynamic(Direction.kForward));
-    m_driverController.povLeft().whileTrue(m_MazeSubsystem.SysIdQuastatic(Direction.kReverse));
-    m_driverController.povUp().whileTrue(m_MazeSubsystem.SysIdQuastatic(Direction.kForward));
   }
 
   /**

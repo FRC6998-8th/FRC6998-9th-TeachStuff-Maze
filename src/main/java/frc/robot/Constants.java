@@ -22,6 +22,11 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
  */
 public final class Constants {
   public static class Motors {
+    public static final double Pitch_kS = 0.01/12;
+    public static final double Pitch_kG = 0.02/12;
+    public static final double Pitch_kV = 0.1/12;
+    public static final double Pitch_kA = 0;
+
     public static final int ROLL_DEVICE_ID = 1;
     public static final int PITCH_DEVICE_ID = 2;
 
@@ -31,22 +36,26 @@ public final class Constants {
     public static SparkMaxConfig configRoll = new SparkMaxConfig();
     public static SparkMaxConfig configPitch = new SparkMaxConfig();
 
-    public static final double GEAR_RATIO = 1.0 / 9.0;
+    public static final double GEAR_RATIO = 1.0 / (9.0 * 85.0 / 35.0);
 
     public static final boolean isRollInversted = false;
     public static final boolean isPitchInversted = true;
 
-    public static final double ROLL_kP = 0.8;
-    public static final double PITCH_kP = 0.8;
-    public static final double ROLL_FF = 0.1;
-    public static final double PITCH_FF = 0.1;
+    public static final double ROLL_kP = 3;
+    public static final double PITCH_kP = 3;
+    public static final double ROLL_FF = 0.0;
+    public static final double PITCH_FF = 0.0;
 
-    public final static double PitchLimit = 0.1;
-    public final static double RollLimit = 0.1; //rotation
+    public static final double OneSideLimit = 0.035;
+
+    public final static double ForwardLimit = OneSideLimit*2;
+    public final static double ReverseLimit = -0.0001;
+
+    // public final static double RollLimit = 0.035; //rotation
 
     static {
-      configRoll.idleMode(IdleMode.kBrake).smartCurrentLimit(1000).inverted(isRollInversted);      
-      configPitch.idleMode(IdleMode.kBrake).smartCurrentLimit(1000).inverted(isPitchInversted);
+      configRoll.idleMode(IdleMode.kBrake).smartCurrentLimit(60).inverted(isRollInversted);      
+      configPitch.idleMode(IdleMode.kBrake).smartCurrentLimit(60).inverted(isPitchInversted);
 
       configRoll.encoder.velocityConversionFactor(GEAR_RATIO/60);
       configRoll.encoder.positionConversionFactor(GEAR_RATIO);
@@ -54,14 +63,13 @@ public final class Constants {
       configRoll.softLimit
         .forwardSoftLimitEnabled(true)
         .reverseSoftLimitEnabled(true)
-        .forwardSoftLimit(RollLimit)
-        .reverseSoftLimit(-RollLimit);
+        .forwardSoftLimit(ForwardLimit)
+        .reverseSoftLimit(ReverseLimit);
       
       configRoll.closedLoop
         .apply(new ClosedLoopConfig().pidf(ROLL_kP, 0, 0, ROLL_FF))
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-        .outputRange(-1, 1)
-        .maxMotion.maxVelocity(30).maxAcceleration(30);
+        .outputRange(-1, 1);
 
       configPitch.encoder.velocityConversionFactor(GEAR_RATIO/60);
       configPitch.encoder.positionConversionFactor(GEAR_RATIO);
@@ -69,14 +77,13 @@ public final class Constants {
       configPitch.softLimit
         .forwardSoftLimitEnabled(true)
         .reverseSoftLimitEnabled(true)
-        .forwardSoftLimit(PitchLimit)
-        .reverseSoftLimit(-PitchLimit);
+        .forwardSoftLimit(ForwardLimit)
+        .reverseSoftLimit(ReverseLimit);
 
       configPitch.closedLoop
         .apply(new ClosedLoopConfig().pidf(PITCH_kP, 0, 0, PITCH_FF))
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-        .outputRange(-1, 1)
-        .maxMotion.maxVelocity(30).maxAcceleration(30);
+        .outputRange(-1, 1);
     }
   }
 

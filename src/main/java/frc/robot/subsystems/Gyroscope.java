@@ -4,77 +4,32 @@ import com.studica.frc.AHRS;
 import com.studica.frc.AHRS.NavXComType;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 
 public class Gyroscope extends SubsystemBase {
   private final AHRS gyro;
-  private AHRS microIMU;
 
   public Gyroscope() {
-    gyro = new AHRS(NavXComType.kMXP_SPI);
-    // microIMU = new AHRS(NavXComType.kUSB1);
-
-    // microIMU.close();
-
-    //gyro.reset();
-    // microIMU.reset();
+    gyro = new AHRS(NavXComType.kMXP_SPI);    
   }
 
   public double GetDriveRoll() {
-    return gyro.getRoll();
+    double tmp = Range(-Constants.Motors.OneSideLimit, Constants.Motors.OneSideLimit,
+    gyro.getRoll()/360) + Constants.Motors.OneSideLimit;
+
+    return Range(0.001, Constants.Motors.ForwardLimit-0.001, tmp);
   }
 
   public double GetDrivePitch() {
-    return gyro.getPitch();
+    double tmp = Range(-Constants.Motors.OneSideLimit, Constants.Motors.OneSideLimit,
+    gyro.getPitch()/360) + Constants.Motors.OneSideLimit;
+
+    return Range(0.0001, Constants.Motors.ForwardLimit-0.001, tmp);
   }
 
-  public double GetMazePitch() {    
-    return microIMU.getPitch();
-  }
-
-  public double GetMazeRoll() {
-    return microIMU.getRoll();
-  }
-
-  public double GetMazePitchVelocity() {
-    return microIMU.getRawGyroX();
-  }
-
-  public double GetMazeRollVelocity() {
-    return microIMU.getRawGyroY();
-  }
-
-  public Command ResetDriveGyro() {
-    return runOnce(() -> {
-      gyro.reset();
-    });
-  }
-
-  public Command ResetMazeGyro() {
-
-    return runOnce(() -> {
-      microIMU.reset();
-    });
-  }
-
-  public Command exampleMethodCommand() {
-    // Inline construction of command goes here.
-    // Subsystem::RunOnce implicitly requires `this` subsystem.
-    return runOnce(
-        () -> {
-          /* one-time action goes here */
-        });
-  }
-
-  /**
-   * An example method querying a boolean state of the subsystem (for example, a digital sensor).
-   *
-   * @return value of some boolean subsystem state, such as a digital sensor.
-   */
-  public boolean exampleCondition() {
-    // Query some boolean state, such as a digital sensor.
-    return false;
+  private double Range(double min, double max, double n) {
+    return Math.min(Math.max(n, min), max);
   }
 
   @Override

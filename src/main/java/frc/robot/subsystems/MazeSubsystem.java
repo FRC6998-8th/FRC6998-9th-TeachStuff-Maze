@@ -7,9 +7,12 @@ import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkBase.ControlType;
 
+import edu.wpi.first.math.controller.ArmFeedforward;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.MutAngle;
 import edu.wpi.first.units.measure.MutAngularVelocity;
 import edu.wpi.first.units.measure.MutVoltage;
@@ -34,6 +37,9 @@ public class MazeSubsystem extends SubsystemBase {
     private MutAngularVelocity mutAngularVelocity = RotationsPerSecond.mutable(0);
     private MutAngle mutPosition = Rotations.mutable(0);
 
+    //only tuning for pitch
+    private ArmFeedforward ff = new ArmFeedforward(Constants.Motors.Pitch_kS, Constants.Motors.Pitch_kG, Constants.Motors.Pitch_kV, Constants.Motors.Pitch_kA);
+
     public MazeSubsystem(String sysIdStatus) {
         m_Gyroscope = new Gyroscope();
 
@@ -43,14 +49,15 @@ public class MazeSubsystem extends SubsystemBase {
         motorPitch.configure(Constants.Motors.configPitch, Constants.Motors.kReset, Constants.Motors.kPersist);
         motorRoll.configure(Constants.Motors.configRoll, Constants.Motors.kReset, Constants.Motors.kPersist);
 
-        motorPitch.getEncoder().setPosition(0);
-        motorRoll.getEncoder().setPosition(0);
-
+        // !!! DISABLE SYSID !!!
         if (sysIdStatus == "Roll") {
             SetRollSysId();
         } else if (sysIdStatus == "Pitch") {
             SetPitchSysId();
         }
+
+        motorPitch.getEncoder().setPosition(Constants.Motors.OneSideLimit);
+        motorRoll.getEncoder().setPosition(Constants.Motors.OneSideLimit);
     }
 
     public void SetPitchSysId() {
@@ -66,9 +73,9 @@ public class MazeSubsystem extends SubsystemBase {
                         .voltage(mutVoltage.mut_replace(
                             motorPitch.getBusVoltage() * motorPitch.getAppliedOutput(), Volts))
                         .angularPosition(mutPosition.mut_replace(
-                            m_Gyroscope.GetMazePitch(), Degrees))
+                            0, Degrees))
                         .angularVelocity(mutAngularVelocity.mut_replace(
-                            m_Gyroscope.GetMazePitchVelocity(), DegreesPerSecond));
+                            0, DegreesPerSecond));
                 }
             , this));
     }
@@ -86,9 +93,9 @@ public class MazeSubsystem extends SubsystemBase {
                         .voltage(mutVoltage.mut_replace(
                             motorRoll.getBusVoltage() * motorRoll.getAppliedOutput(), Volts))
                         .angularPosition(mutPosition.mut_replace(
-                            m_Gyroscope.GetMazeRoll(), Degrees))
+                            0, Degrees))
                         .angularVelocity(mutAngularVelocity.mut_replace(
-                            m_Gyroscope.GetMazeRollVelocity(), DegreesPerSecond));
+                            0, DegreesPerSecond));
                 },
                 this));
     }
@@ -105,22 +112,16 @@ public class MazeSubsystem extends SubsystemBase {
         });
     }
 
-    public Command ResetDriveGyro() {
-        return runOnce(() -> {
-            m_Gyroscope.ResetDriveGyro();
-        });
-    }
-
     public Command ResetMaze() {
         return runOnce(() -> {
-            motorPitch.getEncoder().setPosition(0);
-            motorRoll.getEncoder().setPosition(0);
+            motorPitch.getEncoder().setPosition(Constants.Motors.OneSideLimit);
+            motorRoll.getEncoder().setPosition(Constants.Motors.OneSideLimit);
         });
     }
 
     public void Release() {
-        outPutRoll = m_Gyroscope.GetDriveRoll()/360;
-        outPutPitch = m_Gyroscope.GetDrivePitch()/360;
+        outPutRoll = m_Gyroscope.GetDriveRoll();
+        outPutPitch = m_Gyroscope.GetDrivePitch();
 
         SetPitchPosition(outPutPitch);
         SetRollPosition(outPutRoll);
@@ -128,12 +129,13 @@ public class MazeSubsystem extends SubsystemBase {
 
     public void SetRollPosition(double position) {
         motorRoll.getClosedLoopController()
-        .setReference(position, ControlType.kMAXMotionPositionControl);
+        .setReference(position, ControlType.kPosition, ClosedLoopSlot.kSlot0);
     }
 
     public void SetPitchPosition(double position) {
         motorPitch.getClosedLoopController()
-        .setReference(position, ControlType.kMAXMotionPositionControl);
+        .setReference(position, ControlType.kPosition, ClosedLoopSlot.kSlot0, 
+        ff.calculate(Units.rotationsToRadians(position), 0));
     }
 
     public double GetMazePitch() {
@@ -160,5 +162,7 @@ public class MazeSubsystem extends SubsystemBase {
         SmartDashboard.putNumber("SetPointRoll", outPutRoll);
         SmartDashboard.putNumber("PitchOutVol", motorPitch.getAppliedOutput());
         SmartDashboard.putNumber("PitchCurrent", motorPitch.getOutputCurrent());
+        SmartDashboard.putNumber("PitchVelocity", motorPitch.getEncoder().getVelocity());
+
     }
 }
