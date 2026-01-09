@@ -48,8 +48,8 @@ public final class Constants {
 
     public static final double OneSideLimit = 0.035;
 
-    public final static double ForwardLimit = OneSideLimit*2;
-    public final static double ReverseLimit = -0.0001;
+    public static final double ForwardLimit = OneSideLimit*2;
+    public static final double ReverseLimit = -0.0001;
 
     // public final static double RollLimit = 0.035; //rotation
 
